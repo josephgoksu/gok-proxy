@@ -2,25 +2,31 @@
 
 # gok-proxy: Lightweight High-Performance Go Proxy Server
 
-`gok-proxy` (Gök is "sky" in Turkish) is a lightweight, exceptionally performant, and scalable HTTP/HTTPS proxy server built with Go. It leverages `fasthttp` for speed and efficiency, offering a modern alternative to traditional proxy solutions like Squid.
+**`gok-proxy` (Gök, Turkish for "sky") is a lightweight, high-performance, and scalable HTTP/HTTPS proxy server built with Go. It leverages `fasthttp` for exceptional speed and efficiency.**
+
+## Overview
+
+`gok-proxy` offers a modern, performant alternative to traditional proxy solutions. Designed for speed, scalability, and ease of use, it provides robust HTTP/1.1 and HTTPS proxying capabilities. Key aspects include structured logging via `slog`, Prometheus metrics integration for comprehensive monitoring, and flexible configuration through `viper`.
 
 ## Core Features
 
-- **Exceptional Performance**: Built on Go's concurrency model and the high-speed `fasthttp` library for optimal resource utilization and request handling.
-- **HTTP/1.1 Support**: Full support for HTTP/1.1 protocols.
-- **HTTPS Proxying (CONNECT Tunneling)**: Securely proxies HTTPS traffic using the HTTP CONNECT method.
+- **Exceptional Performance**: Built on Go's concurrency model and the `fasthttp` library for optimal resource utilization and high-throughput request handling.
+- **HTTP/1.1 Support**: Full proxying capabilities for HTTP/1.1 traffic.
+- **HTTPS Proxying (CONNECT Tunneling)**: Securely tunnels HTTPS traffic using the HTTP CONNECT method.
 - **Structured Logging**: Employs `slog` (Go's standard structured logging package) for clear, configurable, and machine-parsable logs.
-- **Prometheus Metrics**: Integrates seamlessly with Prometheus for comprehensive operational metrics and monitoring.
-- **Flexible Configuration**: Utilizes `viper` for easy configuration management through a `config.yaml` file, with sensible defaults.
-- **Graceful Shutdown**: Ensures clean termination by handling OS signals, preventing abrupt disconnections.
-- **Connection Pooling**: Optimizes outgoing client connections using `sync.Pool` for `fasthttp.Client` instances.
+- **Prometheus Metrics**: Seamless integration with Prometheus for comprehensive operational metrics and monitoring.
+- **Flexible Configuration**: Easy configuration management via a `config.yaml` file using `viper`, with sensible defaults.
+- **Graceful Shutdown**: Handles OS signals for clean termination, preventing abrupt disconnections and ensuring in-flight requests are processed.
+- **Connection Pooling**: Optimizes outgoing client connections for proxied requests using `sync.Pool` for `fasthttp.Client` instances, enhancing reuse and performance.
 
 ## Prerequisites
 
 - Go 1.24.2 or newer.
 - A Unix-like environment (Linux, macOS) is recommended for development and deployment.
 
-## Getting Started
+## Quick Start
+
+Follow these steps to get `gok-proxy` up and running quickly.
 
 ### 1. Clone the Repository
 
@@ -29,9 +35,9 @@ git clone https://github.com/josephgoksu/gok-proxy.git
 cd gok-proxy
 ```
 
-### 2. Install Dependencies
+### 2. Install Dependencies (Optional)
 
-Go modules will automatically manage dependencies. To download them explicitly:
+Go modules typically manage dependencies automatically. To download them explicitly:
 
 ```bash
 go mod download
@@ -45,25 +51,19 @@ go build -o gok-proxy-proxy ./cmd/proxy/
 
 This command compiles the proxy server and creates an executable named `gok-proxy-proxy` in the project's root directory.
 
-## Configuration
+### 4. Initial Configuration (Optional)
 
-`gok-proxy` is configured using a `config.yaml` file located in the project root. If the file doesn't exist, it will run with default settings upon the first execution where config is read (though it's best to create it). Refer to `pkg/config/config.go` for all available options and their defaults.
+`gok-proxy` can run with default settings. For customization, create a `config.yaml` file in the project root. If this file is absent, `gok-proxy` will use its default configuration values.
 
-A sample `config.yaml`:
+See the **Detailed Configuration** section below for more information. A sample configuration:
 
 ```yaml
 ServerAddress: ":8080"
-MaxConnections: 10000 # Max connections per IP for the fasthttp server
-LogLevel: "info" # Logging level: "debug", "info", "warn", "error"
-MaxRequestsPerConn: 5000 # Max requests per connection (server-side)
-
-# Client-side connection pool settings (for outgoing proxied requests)
-ClientReadTimeoutSeconds: 15
-ClientWriteTimeoutSeconds: 15
-ClientMaxIdleConnDurationSeconds: 60
+MaxConnections: 10000
+LogLevel: "info"
 ```
 
-## Running gok-proxy
+### 5. Run gok-proxy
 
 Execute the compiled binary:
 
@@ -73,61 +73,92 @@ Execute the compiled binary:
 
 The proxy server will start, and log output (by default, to stdout) will indicate its status.
 
-## Testing the Proxy
+### 6. Test Your Setup
 
-Use a tool like `curl` to test the proxy server. Replace `127.0.0.1:8080` if your `ServerAddress` is different.
+Use a tool like `curl` to verify the proxy. Replace `127.0.0.1:8080` if your `ServerAddress` configuration is different.
 
-### HTTP Request
+**HTTP Request:**
 
 ```bash
 curl -x http://127.0.0.1:8080 http://ifconfig.io
 ```
 
-### HTTPS Request (via CONNECT tunnel)
+**HTTPS Request (via CONNECT tunnel):**
 
 ```bash
 curl -p -x http://127.0.0.1:8080 https://ifconfig.io
 ```
 
-_(The `-p` flag tells curl to use the CONNECT method for HTTPS proxying.)_
+_(The `-p` flag instructs `curl` to use the CONNECT method for HTTPS proxying.)_
 
-## Project Structure
+## Detailed Configuration
 
-```plaintext
-gok-proxy/
-├── cmd/
-│   └── proxy/            # Main application package
-│       └── main.go       # Application entry point, server setup, and lifecycle management
-├── pkg/
-│   ├── config/           # Configuration loading and validation
-│   │   └── config.go
-│   ├── handler/          # HTTP/HTTPS request handling logic
-│   │   └── handler.go
-│   ├── log/              # Logging setup (using slog)
-│   │   └── log.go
-│   ├── metrics/          # Prometheus metrics setup
-│   │   └── metrics.go
-│   ├── pool/             # fasthttp.Client connection pool for outgoing requests
-│   │   └── pool.go
-│   └── proxy/            # Proxy server core (fasthttp server wrapper)
-│       └── proxy.go
-├── config.yaml           # Default/sample configuration file
-├── go.mod                # Go module definition
-├── go.sum                # Dependency checksums
-└── README.md             # This file
+`gok-proxy` uses a `config.yaml` file in the project root for configuration. If the file does not exist, default settings are applied. All available options and their defaults are defined in `pkg/config/config.go`.
+
+**Sample `config.yaml`:**
+
+```yaml
+# Server-side settings
+ServerAddress: ":8080" # Address and port for the proxy server to listen on
+MaxConnections: 10000 # Max concurrent connections per source IP for the fasthttp server
+MaxRequestsPerConn: 5000 # Max requests per incoming connection (server-side)
+LogLevel: "info" # Logging level: "debug", "info", "warn", "error"
+
+# Client-side connection pool settings (for outgoing proxied requests)
+ClientReadTimeoutSeconds: 15 # Read timeout for outgoing client connections
+ClientWriteTimeoutSeconds: 15 # Write timeout for outgoing client connections
+ClientMaxIdleConnDurationSeconds: 60 # Max duration an idle connection is kept in the pool
+ClientMaxConnsPerHost: 512 # Max connections per host for the outgoing client
 ```
+
+Adjust these values based on your operational requirements and system capabilities.
+
+## Performance & Load Testing with k6
+
+This project includes a k6 load test script (`loadtest/gok_proxy_loadtest.js`) to evaluate the proxy's performance.
+
+### Prerequisites for Load Testing
+
+1.  **Install k6**: Follow the [official k6 installation guide](https://k6.io/docs/getting-started/installation/).
+2.  **Ensure `gok-proxy` is Running**: Your compiled `gok-proxy` server should be running locally (default: `http://localhost:8080`).
+    ```bash
+    ./gok-proxy-proxy
+    ```
+
+### Running the Load Test
+
+Navigate to the project root directory and execute:
+
+```bash
+HTTP_PROXY=http://localhost:8080 k6 run loadtest/gok_proxy_loadtest.js
+```
+
+- The `HTTP_PROXY` environment variable directs k6 to route its requests through your `gok-proxy` instance.
+- The script tests proxied HTTP GET requests (to `http://httpbin.org/get`) and proxied HTTPS GET requests (to `https://httpbin.org/get`, which uses CONNECT).
+- Results are displayed in the console, and an HTML report is generated at `loadtest/summary.html`.
+
+## Using `gok-proxy` as a Library
+
+While `gok-proxy` is primarily a standalone application, its core components can be used as a library within other Go projects.
+
+1.  **Add `gok-proxy` as a dependency:**
+    ```bash
+    go get github.com/josephgoksu/gok-proxy
+    ```
+2.  **Integration:**
+    You can import packages like `pkg/proxy`, `pkg/config`, `pkg/handler`, etc., to leverage specific functionalities. The `cmd/proxy/main.go` file serves as a comprehensive example of how these components are initialized and wired together, including server setup, configuration loading, handler registration, and metrics integration. Study `main.go` to understand how to instantiate and use the proxy server programmatically.
 
 ## Contributing
 
-Contributions, issues, and feature requests are welcome! Feel free to check [issues page](https://github.com/josephgoksu/gok-proxy/issues) (if your project is hosted and has an issues page).
+Contributions, issues, and feature requests are welcome!
 
-1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
+1.  Fork the Project.
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
+4.  Push to the Branch (`git push origin feature/AmazingFeature`).
+5.  Open a Pull Request.
 
-Adherence to Go best practices and the inclusion of relevant tests (if applicable) are appreciated.
+Please adhere to Go best practices and include tests where applicable.
 
 ## Acknowledgements
 
@@ -135,7 +166,8 @@ Adherence to Go best practices and the inclusion of relevant tests (if applicabl
 - `slog` (Go standard library): For robust structured logging.
 - [viper](https://github.com/spf13/viper): For versatile configuration management.
 - [Prometheus](https://prometheus.io/): For industry-standard metrics collection.
+- [k6](https://k6.io/): For powerful load testing.
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` file for more information .
+Distributed under the MIT License. See the `LICENSE` file for more information.
