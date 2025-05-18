@@ -1,0 +1,45 @@
+name: Build and Create Tag
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build_and_tag:
+    name: Build and Create Git Tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Necessary to push tags
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetches all history for all tags and branches
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.2" # From README prerequisites
+
+      - name: Build Go Package
+        run: go build -v -o gok-proxy-proxy ./cmd/proxy/
+        # -v for verbose output
+        # Output artifact is gok-proxy-proxy
+
+      - name: Create and Push Tag
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Generate a tag name. Example: build-20231027-143000
+          # You might want to adapt this to a semantic versioning strategy for actual releases.
+          TAG_NAME="build-$(date +'%Y%m%d-%H%M%S')"
+          echo "Generated tag name: $TAG_NAME"
+
+          git tag "$TAG_NAME"
+          echo "Created tag $TAG_NAME locally."
+
+          git push origin "$TAG_NAME"
+          echo "Pushed tag $TAG_NAME to remote."
