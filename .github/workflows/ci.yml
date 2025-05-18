@@ -1,16 +1,19 @@
-name: Build and Create Tag
+name: CI Build and Test
 
 on:
   push:
     branches:
-      - master
+      - master # Or main, if you've switched
+  pull_request:
+    branches:
+      - master # Or main
 
 jobs:
-  build_and_tag:
-    name: Build and Create Git Tag
+  build_test_lint_tag:
+    name: Build, Test, Lint, and Tag
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Necessary to push tags
+      contents: write # Necessary to push tags if the push is to the master/main branch
 
     steps:
       - name: Checkout repository
@@ -21,20 +24,30 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24.2" # From README prerequisites
+          go-version: "1.24.2" # From go.mod and README
+
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+      - name: Run golangci-lint
+        run: $(go env GOPATH)/bin/golangci-lint run ./... --timeout 5m
+
+      - name: Run tests
+        run: go test -v ./...
 
       - name: Build Go Package
         run: go build -v -o gok-proxy-proxy ./cmd/proxy/
         # -v for verbose output
         # Output artifact is gok-proxy-proxy
 
-      - name: Create and Push Tag
+      - name: Create and Push Tag (only on push to master/main)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master' # Or refs/heads/main
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Generate a tag name. Example: build-20231027-143000
-          # You might want to adapt this to a semantic versioning strategy for actual releases.
+          # For actual releases, consider a semantic versioning strategy.
           TAG_NAME="build-$(date +'%Y%m%d-%H%M%S')"
           echo "Generated tag name: $TAG_NAME"
 
