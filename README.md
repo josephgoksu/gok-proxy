@@ -1,3 +1,5 @@
+<img src="./assets/logo-text.png" alt="gok-proxy" height="250" width="250" align="right" style="margin-left: 10px;" />
+
 # gok-proxy: Lightweight High-Performance Go Proxy Server
 
 `gok-proxy` (Gök is "sky" in Turkish) is a lightweight, exceptionally performant, and scalable HTTP/HTTPS proxy server built with Go. It leverages `fasthttp` for speed and efficiency, offering a modern alternative to traditional proxy solutions like Squid.
